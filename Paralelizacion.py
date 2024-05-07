@@ -107,12 +107,12 @@ if __name__ == "__main__":
     datas = manager.list()
 
     # Hidden layers
-    N_HL = 3
+    N_HL = 2
 
     # Crear un DataFrame de pandas con los datos
     df = pd.DataFrame(np.array(main(datas, N_HL)), columns=['Learning_rate', 'Momentum', 'N_capasOcultas','N_neuronas', 'Precision'])
 
-    nombre_archivo = 'ThreeHiddenLayers.xlsx'
+    nombre_archivo = 'TwoHiddenLayers.xlsx'
     df.to_excel(nombre_archivo, index=False)
 
     print("Archivo Excel guardado correctamente.")
