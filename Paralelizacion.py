@@ -40,6 +40,11 @@ def evaluate_set(hyperparameter_set, results, lock, i, datas, N_HL):
 
     # Hyperparameter to use
     for s in hyperparameter_set:
+
+        HL = []
+        for i in range (N_HL):
+            HL.append(int(s[2]))
+        
         clf = MLPClassifier(
             max_iter = 1000,
             activation = 'logistic',
@@ -48,7 +53,7 @@ def evaluate_set(hyperparameter_set, results, lock, i, datas, N_HL):
             tol = 1e-3,
             learning_rate_init = float(s[0]),
             momentum = float(s[1]),
-            hidden_layer_sizes = [N_HL*int(s[2])]
+            hidden_layer_sizes = HL
         )
         
         clf.fit(X_train_scaled, y_train)
@@ -112,7 +117,7 @@ if __name__ == "__main__":
     # Crear un DataFrame de pandas con los datos
     df = pd.DataFrame(np.array(main(datas, N_HL)), columns=['Learning_rate', 'Momentum', 'N_capasOcultas','N_neuronas', 'Precision'])
 
-    nombre_archivo = 'ThreeHiddenLayers.xlsx'
+    nombre_archivo = str(N_HL) + 'HiddenLayers.xlsx'
     df.to_excel(nombre_archivo, index=False)
 
     print("Archivo Excel guardado correctamente.")
