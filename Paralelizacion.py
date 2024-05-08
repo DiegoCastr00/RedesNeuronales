@@ -30,7 +30,7 @@ X_test_scaled = scaler.transform(X_test)
 hyperparameters = []
 for learning_rate in np.arange(0.2, 0.9, 0.2):
     for momentum_descent in np.arange(0.2, 0.9, 0.2):
-        for hidden_layers in np.arange(4, 16, 1):            
+        for hidden_layers in np.arange(4, 16, 1):
             hyperparameters.append([learning_rate, momentum_descent, hidden_layers])
 
 
