@@ -10,7 +10,7 @@ from sklearn.metrics import accuracy_score
 
 ###################################### DATA
 # Cargar los datos desde el archivo CSV
-data = pd.read_csv("HOG_MODELOS.csv")
+data = pd.read_csv("HOG_Balanceado.csv")
 
 # Dividir los datos en características (features) y etiquetas (labels)
 X = data.drop("etiqueta", axis=1)  # Características
@@ -117,7 +117,7 @@ if __name__ == "__main__":
     # Crear un DataFrame de pandas con los datos
     df = pd.DataFrame(np.array(main(datas, N_HL)), columns=['Learning_rate', 'Momentum', 'N_capasOcultas','N_neuronas', 'Precision'])
 
-    nombre_archivo = str(N_HL) + 'HHOGG.xlsx'
+    nombre_archivo = str(N_HL) + 'HOG_Balanceado.xlsx'
     df.to_excel(nombre_archivo, index=False)
 
     print("Archivo Excel guardado correctamente.")
