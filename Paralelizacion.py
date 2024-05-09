@@ -48,9 +48,12 @@ def evaluate_set(hyperparameter_set, results, lock, i, datas, N_HL):
         clf = MLPClassifier(
             max_iter = 1000,
             activation = 'relu',
-            solver='adam',
+            solver= 'adam',
             validation_fraction = 0.1,
             tol = 1e-3,
+            random_state=11,
+
+            # Hyperparameters
             learning_rate_init = float(s[0]),
             momentum = float(s[1]),
             hidden_layer_sizes = HL
