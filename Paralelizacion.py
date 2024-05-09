@@ -63,7 +63,7 @@ def evaluate_set(hyperparameter_set, results, lock, i, datas, N_HL):
         y_pred = clf.predict(X_test_scaled)        
         
         with lock:
-            datas.append([s[0], s[1], N_HL, s[2], accuracy_score(y_test,y_pred)])
+            datas.append([s[0], s[1], N_HL, s[2], s[3], accuracy_score(y_test,y_pred)])
             results.append(accuracy_score(y_test, y_pred))
 
 
@@ -113,10 +113,10 @@ if __name__ == "__main__":
     datas = manager.list()
 
     # Hidden layers
-    N_HL = 1
+    N_HL = 3
 
     # Crear un DataFrame de pandas con los datos
-    df = pd.DataFrame(np.array(main(datas, N_HL)), columns=['Learning_rate', 'Momentum', 'N_capasOcultas','N_neuronas', 'Precision'])
+    df = pd.DataFrame(np.array(main(datas, N_HL)), columns=['Learning_rate', 'Momentum', 'N_capasOcultas','N_neuronas', 'Rand_state', 'Precision'])
 
     nombre_archivo = str(N_HL) + 'HOG_TODO_Mike.xlsx'
     df.to_excel(nombre_archivo, index=False)
