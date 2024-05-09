@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 from sklearn.neural_network import MLPClassifier
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import StandardScaler, Normalizer
 import time
 import datetime
 from sklearn.metrics import accuracy_score
@@ -47,7 +47,7 @@ def evaluate_set(hyperparameter_set, results, lock, i, datas, N_HL):
         
         clf = MLPClassifier(
             max_iter = 1000,
-            activation = 'logistic',
+            activation = 'relu',
             solver='adam',
             validation_fraction = 0.1,
             tol = 1e-3,
@@ -112,7 +112,7 @@ if __name__ == "__main__":
     datas = manager.list()
 
     # Hidden layers
-    N_HL = 3
+    N_HL = 2
 
     # Crear un DataFrame de pandas con los datos
     df = pd.DataFrame(np.array(main(datas, N_HL)), columns=['Learning_rate', 'Momentum', 'N_capasOcultas','N_neuronas', 'Precision'])
