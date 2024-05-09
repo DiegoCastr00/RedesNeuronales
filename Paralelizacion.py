@@ -1,12 +1,12 @@
-import multiprocessing
-import numpy as np
 import pandas as pd
-from sklearn.neural_network import MLPClassifier
+import numpy as np
+import multiprocessing
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler, Normalizer
+from sklearn.neural_network import MLPClassifier
+from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import accuracy_score
 import time
 import datetime
-from sklearn.metrics import accuracy_score
 
 ###################################### DATA
 # Cargar los datos desde el archivo CSV
@@ -17,7 +17,7 @@ X = data.drop("etiqueta", axis=1)  # Características
 y = data["etiqueta"]  # Etiquetas
 
 # Dividir los datos en conjuntos de entrenamiento y prueba
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
 
 # Escalar las características
 scaler = StandardScaler()
@@ -31,8 +31,8 @@ hyperparameters = []
 for learning_rate in np.arange(0.2, 0.9, 0.2):
     for momentum_descent in np.arange(0.2, 0.9, 0.2):
         for hidden_layers in np.arange(4, 16, 1):
-            hyperparameters.append([learning_rate, momentum_descent, hidden_layers])
-
+            for rand_state in np.arange(1, 25, 1):
+                hyperparameters.append([learning_rate, momentum_descent, hidden_layers, rand_state])
 
 ###################################### EVALUATION
 def evaluate_set(hyperparameter_set, results, lock, i, datas, N_HL):
@@ -44,27 +44,25 @@ def evaluate_set(hyperparameter_set, results, lock, i, datas, N_HL):
         HL = []
         for i in range (N_HL):
             HL.append(int(s[2]))
-        
+
         clf = MLPClassifier(
             max_iter = 1000,
             activation = 'relu',
             solver= 'adam',
             validation_fraction = 0.1,
             tol = 1e-3,
-            random_state=11,
 
             # Hyperparameters
             learning_rate_init = float(s[0]),
             momentum = float(s[1]),
-            hidden_layer_sizes = HL
+            hidden_layer_sizes = HL,
+            random_state= int(s[3])
         )
         
         clf.fit(X_train_scaled, y_train)
         y_pred = clf.predict(X_test_scaled)        
+        
         with lock:
-            # print(
-            #     f"Proceso {i} con parametros {s} y accuracy {accuracy_score(y_test,y_pred)}"
-            # )
             datas.append([s[0], s[1], N_HL, s[2], accuracy_score(y_test,y_pred)])
             results.append(accuracy_score(y_test, y_pred))
 
@@ -115,12 +113,12 @@ if __name__ == "__main__":
     datas = manager.list()
 
     # Hidden layers
-    N_HL = 2
+    N_HL = 1
 
     # Crear un DataFrame de pandas con los datos
     df = pd.DataFrame(np.array(main(datas, N_HL)), columns=['Learning_rate', 'Momentum', 'N_capasOcultas','N_neuronas', 'Precision'])
 
-    nombre_archivo = str(N_HL) + 'HOG_TODO.xlsx'
+    nombre_archivo = str(N_HL) + 'HOG_TODO_Mike.xlsx'
     df.to_excel(nombre_archivo, index=False)
 
     print("Archivo Excel guardado correctamente.")
