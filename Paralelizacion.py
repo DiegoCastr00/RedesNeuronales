@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 import multiprocessing
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import cross_val_score
 from sklearn.neural_network import MLPClassifier
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import accuracy_score
@@ -16,13 +16,15 @@ data = pd.read_csv("HOG_TODO.csv")
 X = data.drop("etiqueta", axis=1)  # Características
 y = data["etiqueta"]  # Etiquetas
 
-# Dividir los datos en conjuntos de entrenamiento y prueba
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
+# # # # Dividir los datos en conjuntos de entrenamiento y prueba
+# # # X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
 
 # Escalar las características
 scaler = StandardScaler()
-X_train_scaled = scaler.fit_transform(X_train)
-X_test_scaled = scaler.transform(X_test)
+X_train_scaled = scaler.fit_transform(X) ## 100% test (cross validation)
+
+# X_train_scaled = scaler.fit_transform(X_train) ## 80/20
+# X_test_scaled = scaler.transform(X_test)
 
 
 ###################################### HYPERPARAMETERS
@@ -31,8 +33,8 @@ hyperparameters = []
 for learning_rate in np.arange(0.2, 0.9, 0.2):
     for momentum_descent in np.arange(0.2, 0.9, 0.2):
         for hidden_layers in np.arange(5, 101, 5):
-            for rand_state in np.arange(10, 25, 1):
-                hyperparameters.append([learning_rate, momentum_descent, hidden_layers, rand_state])
+            for k_folds in np.arange(10, 16, 1):
+                hyperparameters.append([learning_rate, momentum_descent, hidden_layers, k_folds])
 
 ###################################### EVALUATION
 def evaluate_set(hyperparameter_set, results, lock, i, datas, N_HL):
@@ -50,21 +52,30 @@ def evaluate_set(hyperparameter_set, results, lock, i, datas, N_HL):
             activation = 'relu',
             solver= 'adam',
             validation_fraction = 0.1,
+            random_state= 11,
             tol = 1e-3,
 
             # Hyperparameters
             learning_rate_init = float(s[0]),
             momentum = float(s[1]),
-            hidden_layer_sizes = HL,
-            random_state= int(s[3])
+            hidden_layer_sizes = HL
         )
-        
-        clf.fit(X_train_scaled, y_train)
-        y_pred = clf.predict(X_test_scaled)        
-        
+
+        ## 80/20
+        # clf.fit(X_train_scaled, y_train)
+        # y_pred = clf.predict(X_test_scaled)
+
+        ## Cross val
+        # Realiza la validación cruzada en el conjunto de entrenamiento
+        for i in range(2,int(s[3])):
+            scores = cross_val_score(clf, X_train_scaled, y, cv=i)
+
         with lock:
-            datas.append([s[0], s[1], N_HL, s[2], s[3], accuracy_score(y_test,y_pred)])
-            results.append(accuracy_score(y_test, y_pred))
+            print("LR: ", s[0], " | M: ", s[1], " | HL: ", s[2], " | K_f: ", s[3])
+            # datas.append([s[0], s[1], N_HL, s[2], s[3], accuracy_score(y_test,y_pred)]) ## 80/20
+            datas.append([s[0], s[1], N_HL, s[2], s[3], np.mean(scores)]) ## Cross val
+            # results.append(accuracy_score(y_test, y_pred)) ## 80/20
+            results.append(np.mean(scores)) ## Cross val
 
 
 ######################################## MAIN
@@ -116,9 +127,9 @@ if __name__ == "__main__":
     N_HL = 3
 
     # Crear un DataFrame de pandas con los datos
-    df = pd.DataFrame(np.array(main(datas, N_HL)), columns=['Learning_rate', 'Momentum', 'N_capasOcultas','N_neuronas', 'Rand_state', 'Precision'])
+    df = pd.DataFrame(np.array(main(datas, N_HL)), columns=['Learning_rate', 'Momentum', 'N_capasOcultas','N_neuronas', 'K_folds', 'Precision(prom)'])
 
-    nombre_archivo = str(N_HL) + 'HOG_TODO_Mike.xlsx'
+    nombre_archivo = str(N_HL) + 'HOG_TODO_Mike_KFOLDS.xlsx'
     df.to_excel(nombre_archivo, index=False)
 
     print("Archivo Excel guardado correctamente.")
