@@ -26,9 +26,8 @@ X_train_scaled = scaler.fit_transform(X)
 hyperparameters = []
 for learning_rate in np.arange(0.2, 0.9, 0.2):
     for momentum_descent in np.arange(0.2, 0.9, 0.2):
-        for hidden_layers in np.arange(5, 101, 5):
-            for rand_state in np.arange(10, 25, 1):
-                hyperparameters.append([learning_rate, momentum_descent, hidden_layers, rand_state])
+        for hidden_layers in np.arange(2, 101, 10):
+            hyperparameters.append([learning_rate, momentum_descent, hidden_layers])
 
 ###################################### EVALUATION
 def evaluate_set(hyperparameter_set, results, lock, i, datas, N_HL):
@@ -43,26 +42,23 @@ def evaluate_set(hyperparameter_set, results, lock, i, datas, N_HL):
 
         clf = MLPClassifier(
             max_iter = 1000,
-            activation = 'relu',
             solver= 'adam',
             validation_fraction = 0.1,
-            tol = 1e-3,
+            tol = 1e-4,
 
             # Hyperparameters
             learning_rate_init = float(s[0]),
             momentum = float(s[1]),
+            activation = "logistic",
             hidden_layer_sizes = HL,
-            random_state= int(s[3])
         )
-        
-        
         # Realiza la validación cruzada en el conjunto de entrenamiento
-        scores = cross_val_score(clf, X_train_scaled, y, cv=13)
+        scores = cross_val_score(clf, X_train_scaled, y, cv=10)
         
         with lock:
             print(f"=> media: ", np.mean(scores))
-            print("Puntuaciones: ", scores)
-            datas.append([s[0], s[1], N_HL, s[2], s[3], np.mean(scores)])
+            # print("Puntuaciones: ", scores)
+            datas.append([s[0], s[1], N_HL, s[2],np.mean(scores)])
             results.append(np.mean(scores))
 
 
@@ -75,7 +71,7 @@ def main(datas, N_HL):
 
     # Now we will evaluate with multiple processes
     processes = []
-    N_PROCESSES = 3
+    N_PROCESSES = 4
     splits = np.array_split(hyperparameters, N_PROCESSES)
     lock = multiprocessing.Lock()
 
@@ -112,12 +108,12 @@ if __name__ == "__main__":
     datas = manager.list()
 
     # Hidden layers
-    N_HL = 1
+    N_HL = 2
 
     # Crear un DataFrame de pandas con los datos
-    df = pd.DataFrame(np.array(main(datas, N_HL)), columns=['Learning_rate', 'Momentum', 'N_capasOcultas','N_neuronas', 'Rand_state', 'Precision'])
+    df = pd.DataFrame(np.array(main(datas, N_HL)), columns=['Learning_rate', 'Momentum', 'N_capasOcultas','N_neuronas', 'Precision'])
 
-    nombre_archivo = str(N_HL) + 'Prueba.xlsx'
+    nombre_archivo = str(N_HL) + 'Prueba2Layers.xlsx'
     df.to_excel(nombre_archivo, index=False)
 
     print("Archivo Excel guardado correctamente.")
