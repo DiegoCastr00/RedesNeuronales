@@ -24,10 +24,10 @@ X_train_scaled = scaler.fit_transform(X)
 ###################################### HYPERPARAMETERS
 # We create a list with the parameters to be evaluated
 hyperparameters = []
-for learning_rate in np.arange(0.2, 0.9, 0.2):
-    for momentum_descent in np.arange(0.2, 0.9, 0.2):
-        for hidden_layers in np.arange(2, 101, 10):
-            hyperparameters.append([learning_rate, momentum_descent, hidden_layers])
+for learning_rate in np.arange(0.2, 0.5, 0.1):
+    for momentum_descent in np.arange(0.2, 0.5, 0.1):
+        for random in np.arange(2, 20):
+            hyperparameters.append([learning_rate, momentum_descent, random])
 
 ###################################### EVALUATION
 def evaluate_set(hyperparameter_set, results, lock, i, datas, N_HL):
@@ -50,7 +50,8 @@ def evaluate_set(hyperparameter_set, results, lock, i, datas, N_HL):
             learning_rate_init = float(s[0]),
             momentum = float(s[1]),
             activation = "logistic",
-            hidden_layer_sizes = HL,
+            random_state= int(s[2]),
+            hidden_layer_sizes = (11,11),
         )
         # Realiza la validación cruzada en el conjunto de entrenamiento
         scores = cross_val_score(clf, X_train_scaled, y, cv=10)
@@ -58,7 +59,7 @@ def evaluate_set(hyperparameter_set, results, lock, i, datas, N_HL):
         with lock:
             print(f"=> media: ", np.mean(scores))
             # print("Puntuaciones: ", scores)
-            datas.append([s[0], s[1], N_HL, s[2],np.mean(scores)])
+            datas.append([s[0], s[1], N_HL, 11, s[2],np.mean(scores)])
             results.append(np.mean(scores))
 
 
@@ -111,7 +112,7 @@ if __name__ == "__main__":
     N_HL = 2
 
     # Crear un DataFrame de pandas con los datos
-    df = pd.DataFrame(np.array(main(datas, N_HL)), columns=['Learning_rate', 'Momentum', 'N_capasOcultas','N_neuronas', 'Precision'])
+    df = pd.DataFrame(np.array(main(datas, N_HL)), columns=['Learning_rate', 'Momentum', 'N_capasOcultas','N_neuronas','Random State', 'Precision'])
 
     nombre_archivo = str(N_HL) + 'Prueba2Layers.xlsx'
     df.to_excel(nombre_archivo, index=False)
