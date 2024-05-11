@@ -26,8 +26,8 @@ X_train_scaled = scaler.fit_transform(X)
 hyperparameters = []
 for learning_rate in np.arange(0.2, 0.5, 0.1):
     for momentum_descent in np.arange(0.2, 0.5, 0.1):
-        for random in np.arange(2, 20):
-            hyperparameters.append([learning_rate, momentum_descent, random])
+        for neuronas in np.arange(2, 20):
+            hyperparameters.append([learning_rate, momentum_descent, neuronas])
 
 ###################################### EVALUATION
 def evaluate_set(hyperparameter_set, results, lock, i, datas, N_HL):
@@ -50,8 +50,7 @@ def evaluate_set(hyperparameter_set, results, lock, i, datas, N_HL):
             learning_rate_init = float(s[0]),
             momentum = float(s[1]),
             activation = "logistic",
-            random_state= int(s[2]),
-            hidden_layer_sizes = (11,11),
+            hidden_layer_sizes = int(s[2]),
         )
         # Realiza la validación cruzada en el conjunto de entrenamiento
         scores = cross_val_score(clf, X_train_scaled, y, cv=10)
@@ -109,7 +108,7 @@ if __name__ == "__main__":
     datas = manager.list()
 
     # Hidden layers
-    N_HL = 2
+    N_HL = 1
 
     # Crear un DataFrame de pandas con los datos
     df = pd.DataFrame(np.array(main(datas, N_HL)), columns=['Learning_rate', 'Momentum', 'N_capasOcultas','N_neuronas','Random State', 'Precision'])

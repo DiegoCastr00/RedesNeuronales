@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 import multiprocessing
-from sklearn.model_selection import cross_val_score
+from sklearn.model_selection import train_test_split
 from sklearn.neural_network import MLPClassifier
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import accuracy_score
@@ -16,15 +16,13 @@ data = pd.read_csv("Zernike.csv")
 X = data.drop("etiqueta", axis=1)  # Características
 y = data["etiqueta"]  # Etiquetas
 
-# # # # Dividir los datos en conjuntos de entrenamiento y prueba
-# # # X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
+# Dividir los datos en conjuntos de entrenamiento y prueba
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
 
 # Escalar las características
 scaler = StandardScaler()
-X_train_scaled = scaler.fit_transform(X) ## 100% test (cross validation)
-
-# X_train_scaled = scaler.fit_transform(X_train) ## 80/20
-# X_test_scaled = scaler.transform(X_test)
+X_train_scaled = scaler.fit_transform(X_train)
+X_test_scaled = scaler.transform(X_test)
 
 
 ###################################### HYPERPARAMETERS
@@ -127,7 +125,7 @@ if __name__ == "__main__":
     # Crear un DataFrame de pandas con los datos
     df = pd.DataFrame(np.array(main(datas, N_HL)), columns=['LR', 'M', 'N_HL','N_Neu', 'R_state', 'Precision(prom)'])
 
-    nombre_archivo = str(N_HL) + 'HOG_TODO_Mike_KFOLDS.xlsx'
+    nombre_archivo = str(N_HL) + 'HOG_TODO_Mike.xlsx'
     df.to_excel(nombre_archivo, index=False)
 
     print("Archivo Excel guardado correctamente.")
