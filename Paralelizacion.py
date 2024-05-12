@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 import multiprocessing
-from sklearn.model_selection import train_test_split, cross_val_score
+from sklearn.model_selection import train_test_split, cross_validate
 from sklearn.neural_network import MLPClassifier
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import accuracy_score
@@ -10,19 +10,15 @@ import datetime
 
 ###################################### DATA
 # Cargar los datos desde el archivo CSV
-data = pd.read_csv("Zernike.csv")
+data = pd.read_csv("HOG.csv")
 
 # Dividir los datos en características (features) y etiquetas (labels)
 X = data.drop("etiqueta", axis=1)  # Características
 y = data["etiqueta"]  # Etiquetas
 
-# Dividir los datos en conjuntos de entrenamiento y prueba
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
-
 # Escalar las características
 scaler = StandardScaler()
-X_train_scaled = scaler.fit_transform(X_train)
-X_test_scaled = scaler.transform(X_test)
+X_train = scaler.fit_transform(X) ## 100% test (cross validation)
 
 
 ###################################### HYPERPARAMETERS
@@ -30,8 +26,8 @@ X_test_scaled = scaler.transform(X_test)
 hyperparameters = []
 for learning_rate in np.arange(0.2, 0.9, 0.2):
     for momentum_descent in np.arange(0.2, 0.9, 0.2):
-        for hidden_layers in np.arange(4, 16, 1):
-            for r_state in np.arange(10, 16, 1):
+        for hidden_layers in np.arange(3, 16):
+            for r_state in np.arange(10, 16):
                 hyperparameters.append([learning_rate, momentum_descent, hidden_layers, r_state])
 
 ###################################### EVALUATION
@@ -45,7 +41,7 @@ def evaluate_set(hyperparameter_set, results, lock, i, datas, N_HL):
         for i in range (N_HL):
             HL.append(int(s[2]))
 
-        clf = MLPClassifier(
+        mlp_classifier = MLPClassifier(
             max_iter = 1000,
             activation = 'logistic',
             solver= 'adam',
@@ -64,14 +60,14 @@ def evaluate_set(hyperparameter_set, results, lock, i, datas, N_HL):
 
         ## Cross val
         # Realiza la validación cruzada en el conjunto de entrenamiento
-        scores = cross_val_score(clf, X_train_scaled, y, cv=15)
+        scores = cross_validate(mlp_classifier, X_train, y, cv=15,  return_train_score=True)
 
         with lock:
-            print("Lr: ", s[0], " | M: ", s[1], " | N_HL: ", N_HL, " | N_Neu: ", s[2], " | R_state: ", s[3]," | Precision(prom): ", np.mean(scores))
+            # print("Lr: ", s[0], " | M: ", s[1], " | N_HL: ", N_HL, " | N_Neu: ", s[2], " | R_state: ", s[3]," | Precision_train(prom): ", scores['train_score'].mean(), " | Precision_test(prom): ", scores['test_score'].mean())
             # datas.append([s[0], s[1], N_HL, s[2], s[3], accuracy_score(y_test,y_pred)]) ## 80/20
-            datas.append([s[0], s[1], N_HL, s[2], s[3], np.mean(scores)]) ## Cross val
+            datas.append([s[0], s[1], N_HL, s[2], s[3], scores['train_score'].mean(), scores['test_score'].mean()]) ## Cross val
             # results.append(accuracy_score(y_test, y_pred)) ## 80/20
-            results.append(np.mean(scores)) ## Cross val
+            results.append(scores['test_score'].mean()) ## Cross val
 
 
 ######################################## MAIN
@@ -123,9 +119,9 @@ if __name__ == "__main__":
     N_HL = 3
 
     # Crear un DataFrame de pandas con los datos
-    df = pd.DataFrame(np.array(main(datas, N_HL)), columns=['LR', 'M', 'N_HL','N_Neu', 'R_state', 'Precision(prom)'])
+    df = pd.DataFrame(np.array(main(datas, N_HL)), columns=['LR', 'M', 'N_HL','N_Neu', 'R_state', 'Precision_train(prom)', 'Precision_test(prom)'])
 
-    nombre_archivo = str(N_HL) + 'HOG_TODO_Mike.xlsx'
+    nombre_archivo = str(N_HL) + 'HL_HOG.xlsx'
     df.to_excel(nombre_archivo, index=False)
 
     print("Archivo Excel guardado correctamente.")
