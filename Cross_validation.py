@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 import multiprocessing
-from sklearn.model_selection import train_test_split, cross_val_score
+from sklearn.model_selection import train_test_split, cross_val_score, cross_validate
 from sklearn.neural_network import MLPClassifier
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import accuracy_score
@@ -9,7 +9,7 @@ import time
 import datetime
 ###################################### DATA
 # Cargar los datos desde el archivo CSV
-data = pd.read_csv("HOG_bb.csv")
+data = pd.read_csv("HOG_skimage.csv")
 
 # Dividir los datos en características (features) y etiquetas (labels)
 X = data.drop("etiqueta", axis=1)  # Características
@@ -19,15 +19,11 @@ y = data["etiqueta"]  # Etiquetas
 scaler = StandardScaler()
 X_train_scaled = scaler.fit_transform(X)
 
-
-
 ###################################### HYPERPARAMETERS
 # We create a list with the parameters to be evaluated
 hyperparameters = []
-for learning_rate in np.arange(0.2, 0.5, 0.1):
-    for momentum_descent in np.arange(0.2, 0.5, 0.1):
-        for neuronas in np.arange(2, 20):
-            hyperparameters.append([learning_rate, momentum_descent, neuronas])
+for random in np.arange(1, 100):
+    hyperparameters.append([random])
 
 ###################################### EVALUATION
 def evaluate_set(hyperparameter_set, results, lock, i, datas, N_HL):
@@ -38,28 +34,31 @@ def evaluate_set(hyperparameter_set, results, lock, i, datas, N_HL):
 
         HL = []
         for i in range (N_HL):
-            HL.append(int(s[2]))
+            HL.append(1)
 
         clf = MLPClassifier(
-            max_iter = 1000,
+            max_iter = 200,
             solver= 'adam',
-            validation_fraction = 0.1,
-            tol = 1e-4,
+            tol = 0.000000001,
 
             # Hyperparameters
-            learning_rate_init = float(s[0]),
-            momentum = float(s[1]),
-            activation = "logistic",
-            hidden_layer_sizes = int(s[2]),
+            learning_rate_init =0.20,
+            momentum = 0.40,
+            activation = "relu",
+            hidden_layer_sizes = (38,),
+            random_state=(int(s[0]))
         )
-        # Realiza la validación cruzada en el conjunto de entrenamiento
-        scores = cross_val_score(clf, X_train_scaled, y, cv=10)
-        
+
+        scores = cross_validate(clf, X_train_scaled, y, cv=13, return_train_score=True)
+        media_prueba = np.mean(scores['test_score'])
+        media_entrenamiento = np.mean(scores['train_score'])
         with lock:
-            print(f"=> media: ", np.mean(scores))
+            print(f"=> media prueba: ", media_prueba)
+            print(f"=> media entrenamiento: ", media_entrenamiento)
+            print("--------------------------")
             # print("Puntuaciones: ", scores)
-            datas.append([s[0], s[1], N_HL, 11, s[2],np.mean(scores)])
-            results.append(np.mean(scores))
+            datas.append([0.20, 0.40, N_HL,38,s[0],media_entrenamiento,media_prueba])
+            # results.append(np.mean(scores))
 
 
 ######################################## MAIN
@@ -85,7 +84,7 @@ def main(datas, N_HL):
         processes.append(p)
         p.start()
 
-    # Wait for all processes to finish
+    # Wait for all processes to finishsssss
     for p in processes:
         p.join()
 
@@ -109,11 +108,10 @@ if __name__ == "__main__":
 
     # Hidden layers
     N_HL = 1
+   # Crear un DataFrame de pandas con los datos
+    df = pd.DataFrame(np.array(main(datas, N_HL)), columns=['Learning_rate', 'Momentum', 'N_capasOcultas','N_neuronas','Random State', 'Train_Accuracy', 'Test_Accuracy'])
 
-    # Crear un DataFrame de pandas con los datos
-    df = pd.DataFrame(np.array(main(datas, N_HL)), columns=['Learning_rate', 'Momentum', 'N_capasOcultas','N_neuronas','Random State', 'Precision'])
-
-    nombre_archivo = str(N_HL) + 'Prueba2Layers.xlsx'
+    nombre_archivo = str(N_HL) + '1LayersNeuornas100.xlsx'
     df.to_excel(nombre_archivo, index=False)
 
     print("Archivo Excel guardado correctamente.")
